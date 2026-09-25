@@ -1,0 +1,12 @@
+# StorageClass for statically-provisioned volumes.
+# A bare kubeadm cluster has no default dynamic provisioner, so PVs used in
+# this assignment are created manually (static provisioning) and bound by
+# matching storageClassName + capacity/accessMode. This StorageClass exists
+# only so PV/PVC storageClassName fields have something explicit to match on
+# (no provisioner = no dynamic provisioning happens).
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: manual
+provisioner: kubernetes.io/no-provisioner
+volumeBindingMode: WaitForFirstConsumer

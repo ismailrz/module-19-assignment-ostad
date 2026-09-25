@@ -1,0 +1,52 @@
+# Part 5 — Deployment for the node-express-app, using the image pushed to
+# Docker Hub in Part 1. Replace <DOCKERHUB_USERNAME> below (Jenkinsfile in
+# this repo already pushes to roy35/node-express-app, so that is used as the
+# default placeholder).
+#
+# Part 7 — mounts app-pvc (see 05-app-pvc.yaml) at /app/data purely to
+# demonstrate a Pod using a PVC-backed volume; the app does not read/write
+# anything there.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: node-express-app
+  namespace: default
+  labels:
+    app: node-express-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: node-express-app
+  template:
+    metadata:
+      labels:
+        app: node-express-app
+    spec:
+      containers:
+        - name: node-express-app
+          image: roy35/node-express-app:latest
+          ports:
+            - containerPort: 5000
+          env:
+            - name: PORT
+              value: "5000"
+          volumeMounts:
+            - name: app-storage
+              mountPath: /app/data
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 5000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 5000
+            initialDelaySeconds: 10
+            periodSeconds: 20
+      volumes:
+        - name: app-storage
+          persistentVolumeClaim:
+            claimName: app-pvc

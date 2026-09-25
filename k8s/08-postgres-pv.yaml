@@ -1,0 +1,29 @@
+# Part 6 — PersistentVolume backing the PostgreSQL StatefulSet's PVC.
+# Same hostPath approach as app-pv (see 04-app-pv.yaml) — pre-create the
+# directory on the chosen node:
+#   sudo mkdir -p /mnt/data/postgres
+#   sudo chmod 777 /mnt/data/postgres
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: postgres-pv
+  labels:
+    app: postgres
+spec:
+  capacity:
+    storage: 2Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: manual
+  hostPath:
+    path: /mnt/data/postgres
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - <WORKER_NODE_NAME>

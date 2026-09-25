@@ -1,0 +1,31 @@
+# Part 7 — PersistentVolume for the application Pod.
+#
+# hostPath is used because this is a bare kubeadm cluster with no cloud
+# provisioner (no EBS CSI driver configured). Replace <WORKER_NODE_NAME>
+# with the node the app Deployment's pod(s) should land on
+# (`kubectl get nodes` to find the name), and pre-create the directory on
+# that node:
+#   sudo mkdir -p /mnt/data/app
+#   sudo chmod 777 /mnt/data/app
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: app-pv
+spec:
+  capacity:
+    storage: 1Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: manual
+  hostPath:
+    path: /mnt/data/app
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - <WORKER_NODE_NAME>

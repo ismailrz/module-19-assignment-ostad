@@ -1,0 +1,75 @@
+# Part 6 — PostgreSQL StatefulSet with persistent storage.
+# Per the assignment, the app Deployment does NOT need to connect to this.
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-headless
+  namespace: default
+  labels:
+    app: postgres
+spec:
+  clusterIP: None
+  selector:
+    app: postgres
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: default
+spec:
+  serviceName: postgres-headless
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: appdb
+            - name: POSTGRES_USER
+              value: appuser
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: password
+          volumeMounts:
+            - name: postgres-storage
+              mountPath: /var/lib/postgresql/data
+              subPath: pgdata
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-storage
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: manual
+        resources:
+          requests:
+            storage: 2Gi
+---
+# Referenced above so the DB password isn't hardcoded in the StatefulSet.
+# Replace the value or apply your own before creating the StatefulSet:
+#   kubectl create secret generic postgres-credentials \
+#     --from-literal=password='<CHOOSE_A_PASSWORD>'
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-credentials
+  namespace: default
+type: Opaque
+stringData:
+  password: changeme123

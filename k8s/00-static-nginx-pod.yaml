@@ -1,0 +1,27 @@
+# Part 4 — Static Pod running NGINX.
+#
+# Static Pods are NOT created with `kubectl apply`. The kubelet on a node
+# watches a manifest directory (default: /etc/kubernetes/manifests) and
+# creates/manages any Pod defined there directly, without going through the
+# API server / scheduler.
+#
+# To deploy:
+#   sudo cp 00-static-nginx-pod.yaml /etc/kubernetes/manifests/static-nginx.yaml
+#
+# The kubelet will pick it up within ~20s. Verify with:
+#   kubectl get pods -A | grep static-nginx
+#   crictl ps | grep nginx          (on the node itself)
+#
+# The Pod name will be suffixed with the node name, e.g. static-nginx-<node>.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: static-nginx
+  labels:
+    app: static-nginx
+spec:
+  containers:
+    - name: nginx
+      image: nginx:1.27-alpine
+      ports:
+        - containerPort: 80
